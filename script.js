@@ -1,4 +1,11 @@
 (() => {
+  // BACKGROUND MUSIC
+  // Put your MP3 in assets/audio/ and change this filename only if needed.
+  const backgroundMusicFile = 'assets/audio/Tum-Tum-MassTamilan.fm.mp3';
+  const customMusic = new Audio(backgroundMusicFile);
+  customMusic.loop = true;
+  customMusic.volume = 0.32;
+
   // PERSONAL GALLERY PHOTOS
   // 1. Put your image files inside: assets/gallery/
   // 2. Replace the empty quotes below with the matching file paths.
@@ -60,25 +67,56 @@
     createTone(130.81, now, 3.15, 0.013, 'sine');
   }
 
-  function toggleMusic(forceOn) {
+  function startFallbackMusic() {
     if (!audioContext) {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
-    const shouldPlay = typeof forceOn === 'boolean' ? forceOn : !musicOn;
-    if (shouldPlay) {
-      audioContext.resume();
-      musicOn = true;
+    audioContext.resume();
+    if (!musicTimer) {
       playTemplePhrase();
       musicTimer = window.setInterval(playTemplePhrase, 3600);
-      musicToggle.setAttribute('aria-pressed', 'true');
-      musicText.textContent = 'Music on';
-    } else {
-      musicOn = false;
+    }
+  }
+
+  function stopFallbackMusic() {
+    if (musicTimer) {
       window.clearInterval(musicTimer);
-      musicToggle.setAttribute('aria-pressed', 'false');
-      musicText.textContent = 'Music off';
+      musicTimer = undefined;
+    }
+    if (audioContext) {
       audioContext.suspend();
     }
+  }
+
+  function startMusic() {
+    musicOn = true;
+    musicToggle.setAttribute('aria-pressed', 'true');
+    musicText.textContent = 'Music on';
+
+    // A supplied MP3 plays first. If it has not been added yet, retain the built-in chime.
+    customMusic.play().then(() => {
+      if (!musicOn) {
+        customMusic.pause();
+        return;
+      }
+      stopFallbackMusic();
+    }).catch(() => {
+      if (musicOn) startFallbackMusic();
+    });
+  }
+
+  function stopMusic() {
+    musicOn = false;
+    customMusic.pause();
+    stopFallbackMusic();
+    musicToggle.setAttribute('aria-pressed', 'false');
+    musicText.textContent = 'Music off';
+  }
+
+  function toggleMusic(forceOn) {
+    const shouldPlay = typeof forceOn === 'boolean' ? forceOn : !musicOn;
+    if (shouldPlay) startMusic();
+    else stopMusic();
   }
   musicToggle.addEventListener('click', () => toggleMusic());
 

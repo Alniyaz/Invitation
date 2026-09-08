@@ -45,7 +45,10 @@
     splash.setAttribute('aria-hidden', 'true');
   }
 
-  openInvitation.addEventListener('click', hideSplash);
+  openInvitation.addEventListener('click', () => {
+    hideSplash();
+    toggleMusic(true);
+  });
 
   function createTone(frequency, start, duration, volume, type = 'sine') {
     const oscillator = audioContext.createOscillator();
